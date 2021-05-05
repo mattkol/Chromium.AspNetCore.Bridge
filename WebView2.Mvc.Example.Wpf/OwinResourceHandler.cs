@@ -22,7 +22,7 @@ namespace WebView2.Mvc.Example.Wpf
             _appFunc = appFunc;
         }
 
-        public virtual void ProcessRequest(ResourceRequest request, Action<ResourceResponse> callback)
+        public virtual void ProcessRequest(ResourceRequest request, CoreWebView2Deferral deferral, Action<ResourceResponse, CoreWebView2Deferral> callback)
         {
             Task.Run(async () =>
             {
@@ -51,11 +51,18 @@ namespace WebView2.Mvc.Example.Wpf
                       new Action(() => 
                       {
                           // Callback
-                          callback.Invoke(response);
+                          callback.Invoke(response, deferral);
                       }));
                   }
-                catch
+                catch (Exception exception)
                 {
+                    Console.WriteLine(exception.Message);
+                    Console.WriteLine(exception.StackTrace);
+                }
+                finally
+                {
+                    deferral?.Complete();
+                    deferral = null;
                 }
             });
         }

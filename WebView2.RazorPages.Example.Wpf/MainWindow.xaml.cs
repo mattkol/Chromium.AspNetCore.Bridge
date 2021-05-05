@@ -48,27 +48,37 @@ namespace WebView2.RazorPages.Example.Wpf
 
         private void BrowserWebResourceRequestedAsync(object sender, CoreWebView2WebResourceRequestedEventArgs e)
         {
-            var deferral = e.GetDeferral();
             var coreWebView2 = (CoreWebView2)sender;
 
-            Action<ResourceResponse> callback = (ResourceResponse resourceResponse) =>
+            Action<ResourceResponse, CoreWebView2Deferral> callback = (ResourceResponse resourceResponse, CoreWebView2Deferral deferral) =>
             {
-                var response = coreWebView2.Environment
-                                          .CreateWebResourceResponse(resourceResponse.Stream, 
-                                          resourceResponse.StatusCode, 
-                                          resourceResponse.ReasonPhrase, 
-                                          resourceResponse.GetHeaderString());
-                if (response != null)
+                try
                 {
-                    e.Response = response;
+                    var response = coreWebView2.Environment
+                          .CreateWebResourceResponse(resourceResponse.Stream,
+                          resourceResponse.StatusCode,
+                          resourceResponse.ReasonPhrase,
+                          resourceResponse.GetHeaderString());
+                    if (response != null)
+                    {
+                        e.Response = response;
+                    }
                 }
-
-                deferral?.Complete();
+                catch (Exception exception)
+                {
+                    Console.WriteLine(exception.Message);
+                    Console.WriteLine(exception.StackTrace);
+                }
+                finally
+                {
+                    deferral?.Complete();
+                    deferral = null;
+                }
             };
 
 
             var request = new ResourceRequest(e.Request.Uri, e.Request.Method, e.Request.Headers, e.Request.Content);
-            _owinResourceHandler.ProcessRequest(request, callback);
+            _owinResourceHandler.ProcessRequest(request, e.GetDeferral(), callback);
         }
     }
 }
