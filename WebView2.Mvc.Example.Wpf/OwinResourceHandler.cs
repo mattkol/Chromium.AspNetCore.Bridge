@@ -58,9 +58,7 @@ namespace WebView2.Mvc.Example.Wpf
                 {
                     Console.WriteLine(exception.Message);
                     Console.WriteLine(exception.StackTrace);
-                }
-                finally
-                {
+
                     deferral?.Complete();
                     deferral = null;
                 }
