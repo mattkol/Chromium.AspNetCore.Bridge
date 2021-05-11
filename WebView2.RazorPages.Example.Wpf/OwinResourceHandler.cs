@@ -32,13 +32,6 @@ namespace WebView2.RazorPages.Example.Wpf
                     ResourceResponse response = null;
                     response = await RequestInterceptor.ProcessRequest(_appFunc, request);
 
-                    while (IsRedirected((HttpStatusCode)response.StatusCode))
-                    {
-                        string redirectUrl = FormatRedirectUrl(request.Url, response.Headers);
-                        var newRequest = new Chromium.AspNetCore.Bridge.ResourceRequest(redirectUrl, "GET", request.Headers, null);
-                        response = await RequestInterceptor.ProcessRequest(_appFunc, newRequest);
-                    }
-
                     if (IsBadRequest((HttpStatusCode)response.StatusCode) || IsRouteNotFound((HttpStatusCode)response.StatusCode))
                     {
                         string redirectUrl = GetHomeUrl(request.Url);
@@ -65,20 +58,6 @@ namespace WebView2.RazorPages.Example.Wpf
             });
         }
 
-        private bool IsRedirected(HttpStatusCode statusCode)
-        {
-            if (statusCode == HttpStatusCode.MovedPermanently
-                 || statusCode == HttpStatusCode.Moved
-                 || statusCode == HttpStatusCode.Redirect
-                 || statusCode == HttpStatusCode.RedirectMethod
-                 || statusCode == HttpStatusCode.TemporaryRedirect)
-            {
-                return true;
-            }
-
-            return false;
-        }
-
         private bool IsRouteNotFound(HttpStatusCode statusCode)
         {
             if (statusCode == HttpStatusCode.NotFound)
@@ -102,28 +81,6 @@ namespace WebView2.RazorPages.Example.Wpf
         private string GetHomeUrl(string url)
         {
             var refererUri = CreateUri(url);
-            return $"{refererUri?.Scheme}{Uri.SchemeDelimiter}{refererUri?.Host}{refererUri?.Port}";
-        }
-
-        private string FormatRedirectUrl(string url, IDictionary<string, string[]> headers)
-        {
-            var refererUri = CreateUri(url);
-
-            if (headers.ContainsKey("Location"))
-            {
-                var location = headers["Location"].FirstOrDefault();
-                if (!string.IsNullOrWhiteSpace(location))
-                {
-                    Uri uri = CreateUri(location);
-                    if (uri != null)
-                    {
-                        return location;
-                    }
-
-                    return $"{refererUri?.Scheme}{Uri.SchemeDelimiter}{refererUri?.Host}{refererUri?.Port}{location}";
-                }
-            }
-
             return $"{refererUri?.Scheme}{Uri.SchemeDelimiter}{refererUri?.Host}{refererUri?.Port}";
         }
 
